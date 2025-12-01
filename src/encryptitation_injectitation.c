@@ -412,5 +412,102 @@ static void j_te_met_32(t_elf_file *file, t_injection_payload *payload)
     //preparer le payload (remplir cles, offsets relatif etc ...)
     format_playload_32_bites(file, payload, get_uint32(woody.last_segment_32->p_vaddr, file->endian_type) + get_uint32(woody.last_segment_32->p_memsz, file->endian_type));
 
-    //constructation du nouvea 
+    //constructation du new buffer et obtenir j te la met l index de l injection
+    //copie la partie du fichier origianal dans le new bufferen ajustatant les segments si besoin, on obtient la position exacte ou il faut placer le code a injecter
+    creation_du_woody_de_met_couille_32_bits(file, &woody, &j_te_la_met);
+
+    //copier le code du payload a l endroit de l injectation
+    ft_memcpy(woody.base_ptr + j_te_la_met, payload->payload_code, payload->payload_size);
+
+    //modifie le point d entree du programme
+    ((Elf32_Ehdr *)woody.base_ptr)->e_entry = get_uint32(woody.last_sgment_32->p_vaddr, file->endian_type) + get_uint32(woody.last_segment_32->p_memsz, file->endian_type);
+    
+
+    //mettre a jour la taille du dernier segment
+    //augement la taille du segment pour inclure le code a injecter, sur le disque et en memoire
+    woody.last_segment_32->p_filesz += get_uint32((uin32_t)payload->payload_size, file->endian_type);
+    woody.last_segment_32->p_memsz += get_uint32((uin32_t)payload->payload_size, file->endian_type);
+
+    //mettre le segment executable
+    //p_flags = les permissions du segment PF_R = lecture PF_W = ecriture PF_X = execution
+    woody.last_segment_32->p_flags |= PF_X;
+
+    //ecrit le nouveau fichier sur le disque si ca echoue, on affiche une erreur et on libere la memoire
+    if (save_fichie(woody.base_ptr, woody.total_size) == EXIT_FAILURE)
+    {
+        error_w(file, payload, &woody, ERROR_ERRNO);
+        free(woody.base_ptr);
+        return ;
+    }
+}
+
+static void j_te_met_64(t_elf_file *file, t_injection_payload *payload)
+{
+    t_elf_segments woody;
+    size_t j_te_la_met;
+    size_t besoin_taille;
+    Elf64_Phdr *last64;
+
+    //recup le dernier segment PT_LOAD (la ou je la met en fin de segment)
+    last64 = last_load_segment(file);
+    if(last64 == NULL)
+    {
+        error_w(file, payload, NULL, ERROR_PH_TRUNC);
+        return ;
+    }
+    woody.last_segment = last64;
+
+    //trouve le segment "data" ou utiliser le dernier si absent
+    woody.data_segment = segment(file, is_data);
+    if (!woody.data_segment)
+    {
+        woody.data_segment = woody.last_segment;
+    }
+
+    //calcul la taille qui faut pour le new binaire
+    besoin_taille = (size_t)get_uint64(woody.last_segment->p_offset, file->endian_type) + (size_t)get_uint64(woody.last_segment->p_filesz, file->endian_type) + payload->payload_size + ((size_t)get_uint64(woody.last_segment->p_memsz, file->endian_type) - (size_t)get_uint64(woody.data_segment->p_filesz, file->endian_type));
+    woody.total_size = besoin_taille;
+
+    //alloue le new buffer
+    woody.base_ptr = malloc(woody.total_size);
+    if(!woody.base_ptr)
+    {
+        error_w(file, payload, &woody, ERROR_ERRNO);
+        return ;
+    }
+
+    //preparer le payload (remplir cles, offsets relatif etc ...)
+    format_payload_64_bites(file, payload, get_uint64(woody.last_segment->p_vaddr, file->endian_type) + get_uint64(woody.last_segment->p_memsz, file->endian_type));
+
+    //constructation du new buffer et obtenir j te la met l index de l injectation
+    creation_du_woody_de_met_couille_64_bits(file, &woody, &j_te_la_met);
+
+    //copier le code du payload a l endroit de l injectation
+    ft_memcpy(woody.base_ptr + j_te_la_met, payload->payload_code, payload->payload_size);
+
+    //modifie le point d entree du programme
+    ((Elf64_Ehdr *)woody.base_ptr)->e_entry = get_uint64(woody.last_segment->p_vaddr, file->endian_type) + get_uint64(woody.last_segment->p_memsz, file->endian_type);
+    
+    //mettre a jour la taille du dernier segment
+    woody.last_segment->p_filesz += get_uint64((uint64_t)payload->payload_size, file->endian_type);
+    woody.last_segment->p_memsz += get_uint64((uint64_t)payload->payload_size, file->endian_type);
+
+    //mettre le segment executable
+    woody.last_segment->p_flags |= PF_X;
+
+    //ecrit le nouveau fichier sur le disque
+    if (save_fichie(woody.base_ptr, woody.total_size) == EXIT_FAILURE)
+    {
+        error_w(file, payload, &woody, ERROR_ERRNO);
+        free(woody.base_ptr);
+        return ;
+    }
+}
+
+void injectation(t_elf_file *file, t_injection_payload *payload)
+{
+    if (file->arch_type == ELFCLASS32)
+        j_te_met_32(file, payload);
+    else if (file->arch_type == ELFCLASS64)
+        j_te_met_64(file, payload);
 }
