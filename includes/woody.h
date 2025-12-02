@@ -113,7 +113,7 @@ int is_data_32(Elf32_Phdr *phdr);
 
 
 //injection
-void injectation(t_elf_file *file, t_injection_payload *payload);
+void injectitation(t_elf_file *file, t_injection_payload *payload);
 //injecte le playload (code + cle) dans l EL
 
 //verification des erreurs

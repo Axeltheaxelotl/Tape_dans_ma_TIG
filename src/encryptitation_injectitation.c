@@ -504,7 +504,7 @@ static void j_te_met_64(t_elf_file *file, t_injection_payload *payload)
     }
 }
 
-void injectation(t_elf_file *file, t_injection_payload *payload)
+void injectitation(t_elf_file *file, t_injection_payload *payload)
 {
     if (file->arch_type == ELFCLASS32)
         j_te_met_32(file, payload);

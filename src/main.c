@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     }
 
     // Injection du code de déchiffrement et de la clé dans le fichier ELF
-    injectation(&fichier, &payload);
+    injectitation(&fichier, &payload);
 
     // Libération de la mémoire allouée pour le code du payload
     str_free(&payload.payload_code);
