@@ -1,5 +1,46 @@
 #include "woody.h"
 
+/* ************************************************************************** */
+/*                          ENDIANNESS CONVERSION                             */
+/* ************************************************************************** */
+
+uint16_t get_uint16(uint16_t byte, t_endian endian)
+{
+    if (endian == LENDIAN)
+        return (byte);
+    return ((byte << 8) | (byte >> 8));
+}
+
+uint32_t get_uint32(uint32_t byte, t_endian endian)
+{
+    if (endian == LENDIAN)
+        return (byte);
+    byte = ((byte << 8) & 0xFF00FF00) | ((byte >> 8) & 0xFF00FF);
+    return (byte << 16) | (byte >> 16);
+}
+
+int32_t get_int32(int32_t byte, t_endian endian)
+{
+    if (endian == LENDIAN)
+        return (byte);
+    byte = ((byte << 8) & 0xFF00FF00) | ((byte >> 8) & 0xFF00FF);
+    return (byte << 16) | ((byte >> 16) & 0xFFFF);
+}
+
+uint64_t get_uint64(uint64_t byte, t_endian endian)
+{
+    if (endian == LENDIAN)
+        return (byte);
+    byte = ((byte << 8) & 0xFF00FF00FF00FF00ULL)
+        | ((byte >> 8) & 0x00FF00FF00FF00FFULL);
+    byte = ((byte << 16) & 0xFFFF0000FFFF0000ULL)
+        | ((byte >> 16) & 0x0000FFFF0000FFFFULL);
+    return (byte << 32) | (byte >> 32);
+}
+
+/* ************************************************************************** */
+/*                          SEGMENT VERIFICATION                              */
+/* ************************************************************************** */
 
 //verifie si le segment et un segment text (la ou qu il y a le code)
 int text(Elf64_Phdr *ph)
@@ -112,4 +153,129 @@ Elf64_Phdr *seg_get64(t_elf_file *file, int (*filetest)(Elf64_Phdr *))
         
         i++;
     }
+}
+
+/* ---------- Trouve le dernier PT_LOAD 64 bits (on garde lisibilité) ---------- */
+Elf64_Phdr *seg_last64(t_elf_file *file)
+{
+    Elf64_Phdr *result = NULL;
+    Elf64_Ehdr *eh;
+    Elf64_Phdr *tab = NULL;
+    uint16_t nb = 0;
+    uint64_t phoff = 0;
+    int i;
+
+    if (!file || !file->base_addr || !file->end_addr)
+        return NULL;
+
+    eh = (Elf64_Ehdr *)file->base_addr;
+    nb = eh->e_phnum;
+    phoff = eh->e_phoff;
+
+    if (!ph_in_buf(file->base_addr, file->end_addr, phoff, nb, sizeof(Elf64_Phdr)))
+        return NULL;
+
+    tab = (Elf64_Phdr *)((unsigned char *)file->base_addr + phoff);
+
+    /* parcourir en sens inverse : on cherche le dernier PT_LOAD */
+    for (i = (int)nb - 1; i >= 0; --i)
+    {
+        Elf64_Phdr *cur = &tab[i];
+
+        /* vérif que l'entrée est dans le buffer */
+        if ((unsigned char *)cur + sizeof(Elf64_Phdr) > (unsigned char *)file->end_addr)
+        {
+            /* on saute cette entrée mais on continue la recherche */
+            continue;
+        }
+
+        if (cur->p_type == PT_LOAD)
+        {
+            result = cur;
+            break;
+        }
+    }
+
+    return result;
+}
+
+/* ---------- Versions 32 bits séparées, mêmes étapes ---------- */
+
+Elf32_Phdr *seg_get32(t_elf_file *file, int (*filt)(Elf32_Phdr *))
+{
+    Elf32_Phdr *result = NULL;
+    Elf32_Ehdr *eh;
+    Elf32_Phdr *tab = NULL;
+    uint16_t nb = 0;
+    uint32_t phoff = 0;
+    uint16_t i;
+
+    if (!file || !file->base_addr || !file->end_addr || !filt)
+        return NULL;
+
+    eh = (Elf32_Ehdr *)file->base_addr;
+    nb = eh->e_phnum;
+    phoff = eh->e_phoff;
+
+    if (!ph_in_buf(file->base_addr, file->end_addr, phoff, nb, sizeof(Elf32_Phdr)))
+        return NULL;
+
+    tab = (Elf32_Phdr *)((unsigned char *)file->base_addr + phoff);
+
+    for (i = 0; i < nb; ++i)
+    {
+        Elf32_Phdr *cur = &tab[i];
+
+        if ((unsigned char *)cur + sizeof(Elf32_Phdr) > (unsigned char *)file->end_addr)
+        {
+            result = NULL;
+            break;
+        }
+
+        if (filt(cur))
+        {
+            result = cur;
+            break;
+        }
+    }
+
+    return result;
+}
+
+Elf32_Phdr *seg_last32(t_elf_file *file)
+{
+    Elf32_Phdr *result = NULL;
+    Elf32_Ehdr *eh;
+    Elf32_Phdr *tab = NULL;
+    uint16_t nb = 0;
+    uint32_t phoff = 0;
+    int i;
+
+    if (!file || !file->base_addr || !file->end_addr)
+        return NULL;
+
+    eh = (Elf32_Ehdr *)file->base_addr;
+    nb = eh->e_phnum;
+    phoff = eh->e_phoff;
+
+    if (!ph_in_buf(file->base_addr, file->end_addr, phoff, nb, sizeof(Elf32_Phdr)))
+        return NULL;
+
+    tab = (Elf32_Phdr *)((unsigned char *)file->base_addr + phoff);
+
+    for (i = (int)nb - 1; i >= 0; --i)
+    {
+        Elf32_Phdr *cur = &tab[i];
+
+        if ((unsigned char *)cur + sizeof(Elf32_Phdr) > (unsigned char *)file->end_addr)
+            continue;
+
+        if (cur->p_type == PT_LOAD)
+        {
+            result = cur;
+            break;
+        }
+    }
+
+    return result;
 }

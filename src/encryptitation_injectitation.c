@@ -8,7 +8,7 @@ static void cle_aleatoire(t_elf_file *file)
 
     //ouvrir /dev/random
     fd = open("/dev/random", O_RDONLY);
-    if (fd == 1)
+    if (fd == -1)
     {
         error_w(file, NULL, NULL, ERROR_ERRNO);
         return ;
@@ -26,7 +26,7 @@ static void cle_aleatoire(t_elf_file *file)
     if(nread != KEY_SIZE)
     {
         close(fd);
-        error_w(file, NULL, "longeur de la cle nique ta mere", ERROR_ERRNO);
+        error_w(file, NULL, NULL, ERROR_ERRNO);
         return ;
     }
 

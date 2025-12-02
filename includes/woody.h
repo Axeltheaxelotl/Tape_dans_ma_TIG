@@ -80,7 +80,7 @@ typedef struct s_elf_segments
     Elf64_Phdr  *last_segment;     // dernier segment LOAD 64-bit (last LOAD segment)
     Elf32_Phdr  *data_segment_32;  // premier segment LOAD 32-bit
     Elf32_Phdr  *last_segment_32;  // dernier segment LOAD 32-bit
-} t_elf_segments; .// t_woody
+} t_elf_segments; // t_woody
 // Sert à localiser les segments où injecter le code dans l'ELF (used to locate LOAD segments for injection).
 
 // Utiliser s_elf_segments pour les pointeurs sur la structure, pas le typedef t_elf_segments
@@ -89,7 +89,7 @@ extern void encryptitation(void *data, uint32_t data_len, void *text, uint32_t l
 void encryptitation_code(t_elf_file *file);
 
 
-
+                         
 //gestion de l endianess
 uint16_t get_uint16(uint16_t bite, t_endian endian);
 int32_t get_int32(int32_t bite, t_endian endian);
