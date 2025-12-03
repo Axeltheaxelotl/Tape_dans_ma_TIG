@@ -1,17 +1,78 @@
 #include "woody.h"
 
+/*
+** Affiche l'usage du programme et retourne EXIT_FAILURE
+** Utilisé quand les arguments sont incorrects
+*/
+static int usage(void)
+{
+    ft_putstr_fd("Usage: ./woody_woodpacker [-k <key>] <binary>\n", 2);
+    ft_putstr_fd("  -k <key>  : Specify encryption key (64 hex chars for 32 bytes)\n", 2);
+    ft_putstr_fd("              Example: -k 0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF\n", 2);
+    ft_putstr_fd("  <binary>  : ELF binary to encrypt (32 or 64 bits)\n", 2);
+    return (EXIT_FAILURE);
+}
+
+/*
+** Parse les arguments de la ligne de commande
+** Retourne l'index du fichier binaire, ou -1 en cas d'erreur
+** Si -k est fourni, parse la clé et la stocke dans file->taille_key
+*/
+static int parse_arguments(int argc, char **argv, t_elf_file *file)
+{
+    int binary_index;
+
+    // Cas 1: ./woody_woodpacker <binary>
+    // Génération aléatoire de la clé
+    if (argc == 2)
+    {
+        file->is_key_provided = 0;  // Clé aléatoire
+        binary_index = 1;
+        return (binary_index);
+    }
+
+    // Cas 2: ./woody_woodpacker -k <key> <binary>
+    // Utilisation d'une clé fournie par l'utilisateur
+    if (argc == 4)
+    {
+        // Vérifier que le flag -k est présent
+        if (ft_strcmp(argv[1], "-k") != 0)
+            return (-1);
+
+        // Parser la clé hexadécimale (64 caractères -> 32 bytes)
+        if (parse_key_from_string(argv[2], file->taille_key) == EXIT_FAILURE)
+        {
+            ft_putstr_fd("Error: Invalid key format. Key must be 64 hexadecimal characters.\n", 2);
+            return (-1);
+        }
+
+        file->is_key_provided = 1;  // Clé fournie par l'utilisateur
+        binary_index = 3;
+        return (binary_index);
+    }
+
+    // Mauvais nombre d'arguments
+    return (-1);
+}
+
 int main(int argc, char **argv)
 {
     t_elf_file fichier;
     t_injection_payload payload;
     int size;
+    int binary_index;
 
     // Mise à zéro de la structure fichier pour éviter les valeurs indéfinies
     ft_bzero(&fichier, sizeof(t_elf_file));
     errno = 0;
 
-    // Vérification du nombre d'arguments et de la validité du fichier ELF
-    if (argc != 2 || le_paaarsing(argv[1], &fichier) == EXIT_FAILURE)
+    // Parse les arguments et récupère l'index du fichier binaire
+    binary_index = parse_arguments(argc, argv, &fichier);
+    if (binary_index == -1)
+        return (usage());
+
+    // Vérification de la validité du fichier ELF
+    if (le_paaarsing(argv[binary_index], &fichier) == EXIT_FAILURE)
         error_w(&fichier, NULL, NULL, !errno ? ERROR_ARGS : ERROR_ERRNO);
 
     // Chiffrement de la section .text du fichier ELF

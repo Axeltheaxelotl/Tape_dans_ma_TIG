@@ -54,6 +54,7 @@ typedef struct s_elf_file
     t_arch arch_type;     // 32 ou 64 bits (architecture type)
     t_endian endian_type; // little ou big (endianness)
     int file_fd;          // descripteur de fichier (file descriptor)
+    int is_key_provided;  // 1 si clé fournie par l'utilisateur, 0 si aléatoire
 } t_elf_file; //t file
 // Cette structure représente un ELF ouvert et mappé en mémoire, avec infos d'archi et clé de chiffrement.
 
@@ -87,6 +88,8 @@ typedef struct s_elf_segments
 
 extern void encryptitation(void *data, uint32_t data_len, void *text, uint32_t len_text);
 void encryptitation_code(t_elf_file *file);
+int parse_key_from_string(const char *key_str, char *key_buffer);
+void cle_aleatoire(t_elf_file *file);
 
 
                          

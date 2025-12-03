@@ -1690,3 +1690,52 @@ NOMBRE DE MODIFICATIONS:
 
   TOTAL: 7 modifications + 78481 bytes chiffrés
 ```
+
+
+
+
+
+
+
+
+
+
+BONUS ++
+
+les algos de compressions pour le bonus "COMPRESSION BINAIRE" :
+
+RLE	Faible (~30%)	Très rapide	⭐ Facile
+LZ77	Moyen (~50%)	Rapide	⭐⭐ Moyen
+DEFLATE	Bon (~60%)	Moyen	⭐⭐⭐⭐ Difficile
+LZMA	Excellent (~70%)	Lent	⭐⭐⭐⭐⭐ Très difficile
+
+
+
+
+
+
+
+cle parametree : 
+
+pour que l utilisateur puissent fournir sa propre cle de chiffrement au lieu d en genrer une aleatoire
+
+utiliter :
+    - tests reproductibles (tjr la meme cle = tjr le meme chiffrement)
+    - partage une cle entre plusiseurs binaires
+    - debugging plus facile
+
+
+
+
+
+binaire PE windows
+
+supporter les fichier .exe et .dll windows PE = partable executable
+
+
+
+binaire Mach-O (macOS)
+
+bas supprte les binaires macos
+
+

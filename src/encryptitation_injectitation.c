@@ -1,53 +1,12 @@
 #include "woody.h"
 
-static void cle_aleatoire(t_elf_file *file)
-{
-    int fd;
-    ssize_t nread;
-    int i;
-
-    //ouvrir /dev/random
-    fd = open("/dev/random", O_RDONLY);
-    if (fd == -1)
-    {
-        error_w(file, NULL, NULL, ERROR_ERRNO);
-        return ;
-    }
-
-    nread = read(fd, file->taille_key, KEY_SIZE);    //lire la key_size octets (cle aleatoire)
-
-    if(nread < 0)
-    {
-        close(fd);
-        error_w(file, NULL, NULL, ERROR_ERRNO);
-        return ;
-    }
-
-    if(nread != KEY_SIZE)
-    {
-        close(fd);
-        error_w(file, NULL, NULL, ERROR_ERRNO);
-        return ;
-    }
-
-    //fermer le fichier
-    if (close(fd) == -1)
-    {
-        error_w(file, NULL, NULL, ERROR_ERRNO);
-        return ;
-    }
-
-    //afficher la sublimisime cle
-    ft_putstr_fd("key_value: ", 1);
-
-    i = 0;
-    while (i < KEY_SIZE)
-    {
-        printf("%02hhX", file->taille_key[i]);
-        i++;
-    }
-    printf("\n");
-}
+/*
+** NOTE: Les fonctions de gestion de clé ont été déplacées vers key_management.c
+** - parse_key_from_string() : Parse une clé hexadécimale en bytes
+** - cle_aleatoire()          : Génère ou affiche la clé (aléatoire ou paramétré)
+**
+** Ce fichier se concentre maintenant uniquement sur le chiffrement et l'injection
+*/
 
 
 static void encryptitation_code_32(t_elf_file *file)

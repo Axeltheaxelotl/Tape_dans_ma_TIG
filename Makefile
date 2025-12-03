@@ -42,6 +42,7 @@ SRC_FILES	= main.c \
 			  parsing.c \
 			  error.c \
 			  encryptitation_injectitation.c \
+			  key_management.c \
 			  smegma.c
 
 ASM_FILES	= encryptitation.s \
