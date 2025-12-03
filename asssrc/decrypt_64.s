@@ -1,9 +1,9 @@
 BITS 64
 
 segment .text
-	global decrypt
+	global decrypt_64
 
-decrypt:
+decrypt_64:
 	push rax
 	push rsi
 	push rdi

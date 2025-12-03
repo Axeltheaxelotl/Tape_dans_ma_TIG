@@ -38,17 +38,17 @@ void	error_w(t_elf_file *file, t_injection_payload *payload, t_elf_segments *woo
         perror("woody_woodpacker: error"); // Affiche le message d'erreur système lié à errno
 
     // 2. Libération du mapping mémoire du fichier ELF
-    if (file->ptr) // Si le pointeur mémoire du fichier est valide
-        munmap(file->ptr, file->size); // On libère la mémoire mappée
+    if (file->base_addr) // Si le pointeur mémoire du fichier est valide
+        munmap(file->base_addr, file->file_size); // On libère la mémoire mappée
     // 3. Fermeture du descripteur de fichier
-    if (file->fd) // Si le descripteur de fichier est ouvert
-        close(file->fd); // On le ferme
+    if (file->file_fd) // Si le descripteur de fichier est ouvert
+        close(file->file_fd); // On le ferme
     // 4. Libération du buffer du payload (code injecté)
     if (payload) // Si le payload existe
-        ft_strdel(&payload->code); // On libère la mémoire du code injecté
+        free(payload->payload_code); // On libère la mémoire du code injecté
     // 5. Libération de la mémoire principale de woody
     if (woody) // Si la structure woody existe
-        free(woody->ptr); // On libère la mémoire associée
+        free(woody->base_ptr); // On libère la mémoire associée
     // 6. Fin du programme avec code d'échec
     exit(EXIT_FAILURE); // Quitte le programme avec un code d'erreur
 }

@@ -71,7 +71,7 @@ int text_32(Elf32_Phdr *ph)
     {
         return 0;
     }
-    if ((ph->p_type == PT_LOAD) && (ph->p_flags & PF_X) && (ph->flags & PF_R))
+    if ((ph->p_type == PT_LOAD) && (ph->p_flags & PF_X) && (ph->p_flags & PF_R))
     {
         return 1;
     }
@@ -84,7 +84,7 @@ int data_32(Elf32_Phdr *ph)
     {
         return 0;
     }
-    if ((ph->type == PT_LOAD) && (ph->p_filesz != ph->p_memsz))
+    if ((ph->p_type == PT_LOAD) && (ph->p_filesz != ph->p_memsz))
     {
         return 1;
     }
@@ -93,7 +93,7 @@ int data_32(Elf32_Phdr *ph)
 
 
 //esque offset + (nb * taille d une entree) rentre dans un fichier charger en memoire
-static int ph_in_buf(void *debut, void *fin, uint64_t offset, uin16_t nb, size_t entree_size)
+static int ph_in_buf(void *debut, void *fin, uint64_t offset, uint16_t nb, size_t entree_size)
 {
     unsigned char *start = (unsigned char *)debut;
     unsigned char *end = (unsigned char *)fin;
@@ -125,15 +125,15 @@ Elf64_Phdr *seg_get64(t_elf_file *file, int (*filetest)(Elf64_Phdr *))
     Elf64_Phdr *result = NULL;
     Elf64_Ehdr *eh;
     Elf64_Phdr *tab = NULL;
-    uin16_t nb = 0;
-    uint64_t phoffset = 0
-    uin16_t i;
+    uint16_t nb = 0;
+    uint64_t phoffset = 0;
+    uint16_t i;
 
-    if (!file || !file->base_addr || !f->end_addr || !filetest)
+    if (!file || !file->base_addr || !file->end_addr || !filetest)
         return NULL;
 
     //recup le elf header
-    eh = (Elf64_Ehdr *)file->base_ptr;
+    eh = (Elf64_Ehdr *)file->base_addr;
     nb = eh->e_phnum;
     phoffset = eh->e_phoff;
 
@@ -150,9 +150,19 @@ Elf64_Phdr *seg_get64(t_elf_file *file, int (*filetest)(Elf64_Phdr *))
     {
         Elf64_Phdr *segment_courant = &tab[i];
         //verifie que si l entree courante tient dans le mapping
-        
+        if ((unsigned char *)segment_courant + sizeof(Elf64_Phdr) > (unsigned char *)file->end_addr)
+        {
+            result = NULL;
+            break;
+        }
+        if (filetest(segment_courant))
+        {
+            result = segment_courant;
+            break;
+        }
         i++;
     }
+    return result;
 }
 
 /* ---------- Trouve le dernier PT_LOAD 64 bits (on garde lisibilité) ---------- */
@@ -278,4 +288,45 @@ Elf32_Phdr *seg_last32(t_elf_file *file)
     }
 
     return result;
+}
+
+// Wrappers pour correspondre aux noms dans woody.h
+Elf64_Phdr *segment(t_elf_file *file, int (*f)(Elf64_Phdr *))
+{
+    return seg_get64(file, f);
+}
+
+Elf64_Phdr *last_load_segment(t_elf_file *file)
+{
+    return seg_last64(file);
+}
+
+Elf32_Phdr *segment_32(t_elf_file *file)
+{
+    return seg_get32(file, text_32);
+}
+
+Elf32_Phdr *get_last_load_segment_32(t_elf_file *file)
+{
+    return seg_last32(file);
+}
+
+int is_text(Elf64_Phdr *phdr)
+{
+    return text(phdr);
+}
+
+int is_data(Elf64_Phdr *phdr)
+{
+    return data(phdr);
+}
+
+int is_text_32(Elf32_Phdr *phdr)
+{
+    return text_32(phdr);
+}
+
+int is_data_32(Elf32_Phdr *phdr)
+{
+    return data_32(phdr);
 }

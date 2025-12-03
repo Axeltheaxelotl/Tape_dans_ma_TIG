@@ -67,10 +67,10 @@ SRCS = ft_bzero.c \
 		
 OBJS = $(SRCS:%.c=%.o)
 
-CC = clang
-CFLAGS = -Wall -Wextra -Werror -Ofast -march=native -ffast-math -flto
-AR = llvm-ar-12 rcs
-RANLIB = llvm-ranlib-12
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror -O2
+AR = ar rcs
+RANLIB = ranlib
 
 ERASE   :=  \033[2K\r
 BLUE    :=  \033[34m

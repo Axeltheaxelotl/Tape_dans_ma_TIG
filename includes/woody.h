@@ -117,7 +117,7 @@ void injectitation(t_elf_file *file, t_injection_payload *payload);
 //injecte le playload (code + cle) dans l EL
 
 //verification des erreurs
-int le_paaarsing(char *filename, t_elf_file *file);
+int le_paaarsing(const char *filename, t_elf_file *file);
 void error_w(t_elf_file *file, t_injection_payload *payload, t_elf_segments *segments, int code);
 
 

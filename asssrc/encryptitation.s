@@ -6,7 +6,11 @@
 ;   rdx = pointeur vers text
 ;   rcx = taille de text
 
+global encrypt
+global encryptitation
+
 encrypt:
+encryptitation:
     push rbp
     mov rbp, rsp
 

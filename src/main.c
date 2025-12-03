@@ -39,6 +39,6 @@ int main(int argc, char **argv)
     injectitation(&fichier, &payload);
 
     // Libération de la mémoire allouée pour le code du payload
-    str_free(&payload.payload_code);
+    free(payload.payload_code);
     return 0;
 }

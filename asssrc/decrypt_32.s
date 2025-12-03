@@ -1,9 +1,9 @@
 BITS 32
 
 segment .text
-	global decrypt
+	global decrypt_32
 
-decrypt:
+decrypt_32:
 	push eax
 	push esi
 	push edi
