@@ -38,12 +38,12 @@ static void cle_aleatoire(t_elf_file *file)
     }
 
     //afficher la sublimisime cle
-    ft_putstr_fd("cle encrypter : 0x", 1);
+    ft_putstr_fd("key_value: ", 1);
 
     i = 0;
     while (i < KEY_SIZE)
     {
-        printf("%02hhx", file->taille_key[i]);
+        printf("%02hhX", file->taille_key[i]);
         i++;
     }
     printf("\n");
@@ -190,7 +190,7 @@ static int save_fichie(char *buf, size_t size)
     }
 
     //renomation de tamere.tmp
-    ret = syscall(SYS_rename, "tamere.tmp", "fdp");
+    ret = syscall(SYS_rename, "tamere.tmp", "woody");
     if (ret != 0)
     {
         //bas si pas marcher toi essayer de exploser tmp
