@@ -22,7 +22,7 @@ end_code:
 	call get_eip
 get_eip:
 	pop edx
-	add edx, (routine - get_eip)  ; text address
+	add edx, 0x0b0b0b0b  ; text address (32-bit immediate)
 	xor ebx, ebx        ; key_index
 	xor eax, eax        ; key_offset
 	jmp key

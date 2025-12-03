@@ -265,8 +265,8 @@ Elf32_Phdr *seg_last32(t_elf_file *file)
         return NULL;
 
     eh = (Elf32_Ehdr *)file->base_addr;
-    nb = eh->e_phnum;
-    phoff = eh->e_phoff;
+    nb = get_uint16(eh->e_phnum, file->endian_type);
+    phoff = get_uint32(eh->e_phoff, file->endian_type);
 
     if (!ph_in_buf(file->base_addr, file->end_addr, phoff, nb, sizeof(Elf32_Phdr)))
         return NULL;

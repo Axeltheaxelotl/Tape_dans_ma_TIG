@@ -99,6 +99,51 @@ static void encryptitation_code_32(t_elf_file *file)
     encryptitation(cle, taille_cle, text, taille_text); //assembler de met couille on verra bieng
 }
 
+static void encryptitation_code_64(t_elf_file *file)
+{
+    void *text;
+    void *cle;
+    uint64_t taille_text;
+    uint32_t taille_cle;
+    Elf64_Phdr *phdr;
+
+    //trouver le segment .text dans la table des program headers
+    file->section_sex = segment(file, is_text);
+    if(file->section_sex == NULL)
+    {
+        error_w(file, NULL, NULL, ERROR_PH_TRUNC);
+        return ;
+    }
+
+    //ajouter le flag d ecriture (PF_W) au segment
+    phdr = (Elf64_Phdr *)file->section_sex;
+    phdr->p_flags |= PF_W;
+
+    //calculer le pointeur vers le code chiffrer
+    uint64_t offset = get_uint64(phdr->p_offset, file->endian_type);
+    text = file->base_addr + offset;
+
+    //recup la taille du code a chiffrer
+    taille_text = get_uint64(phdr->p_filesz, file->endian_type);
+
+    //generer une putain de cle aleatoire
+    cle_aleatoire(file);
+
+    //preparer les parametres pour encryptitation
+    cle = &file->taille_key;
+    taille_cle = KEY_SIZE;
+
+    //verifier que la zone texte est dans la limites du fichier
+    if (text < file->base_addr || text > file->end_addr || (text + taille_text) > file->end_addr)
+    {
+        error_w(file, NULL, NULL, ERROR_TEXT_TRUNC);
+        return ;
+    }
+
+    //chiffrer la zone contenant le code
+    encryptitation(cle, taille_cle, text, taille_text);
+}
+
 
 
 
@@ -178,9 +223,9 @@ static void format_playload_32_bites(t_elf_file *file, t_injection_payload *play
     
     /*
         calcul du saut relatif pour revenir a la putain d entree original:
-        rel = old_entry - (adresse_du_playload + offset_du_jmp + taille du displacement)    
+        rel = old_entry - (adresse_du_playload + offset_du_jmp + taille de l'instruction jmp)    
     */
-    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + playload->offset_jump + (int32_t)sizeof(int32_t));
+    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + playload->offset_jump + 5);
 
     /*
         calcul de l offset relatif vers le debut de la section .text :
@@ -223,9 +268,9 @@ static void format_payload_64_bites(t_elf_file *file, t_injection_payload *paylo
 
     /*
         calcul du saut relatif pour revenir à l'entrée originale:
-        rel = old_entry - (adresse_du_payload + offset_du_jmp + taille du displacement)
+        rel = old_entry - (adresse_du_payload + offset_du_jmp + taille de l'instruction jmp)
     */
-    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + payload->offset_jump + (int32_t)sizeof(int32_t));
+    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + payload->offset_jump + 5);
 
     /*
         calcul de l'offset relatif vers le début de la section .text :
@@ -240,7 +285,7 @@ static void format_payload_64_bites(t_elf_file *file, t_injection_payload *paylo
     taille_cle = KEY_SIZE;
 
     // écriture des valeurs calculées dans les zones du payload
-    ft_memcpy(payload->payload_code + payload->offset_text_size, &text_filesize, sizeof(uint64_t));
+    ft_memcpy(payload->payload_code + payload->offset_text_size, &text_filesize, sizeof(uint32_t));
     ft_memcpy(payload->payload_code + payload->offset_key_size, &taille_cle, sizeof(uint32_t));
     ft_memcpy(payload->payload_code + payload->offset_key, &file->taille_key, KEY_SIZE);
     ft_memcpy(payload->payload_code + payload->offset_text, &text_offset, sizeof(int32_t));
@@ -349,7 +394,7 @@ static void creation_du_woody_de_met_couille_64_bits(t_elf_file *file, t_elf_seg
     }
 
     // ajuste le pointeur last_segment pour le nouveau buffer
-    woody->last_segment_32 = (Elf32_Phdr *)((unsigned char *)woody->base_ptr + ((unsigned char *)woody->last_segment_32 - (unsigned char *)file->base_addr));
+    woody->last_segment = (Elf64_Phdr *)((unsigned char *)woody->base_ptr + ((unsigned char *)woody->last_segment - (unsigned char *)file->base_addr));
 }
 
 
@@ -422,13 +467,16 @@ static void j_te_met_32(t_elf_file *file, t_injection_payload *payload)
     ft_memcpy(woody.base_ptr + j_te_la_met, payload->payload_code, payload->payload_size);
 
     //modifie le point d entree du programme
-    ((Elf32_Ehdr *)woody.base_ptr)->e_entry = get_uint32(woody.last_segment_32->p_vaddr, file->endian_type) + get_uint32(woody.last_segment_32->p_memsz, file->endian_type);
+    uint32_t new_entry_32 = get_uint32(woody.last_segment_32->p_vaddr, file->endian_type) + get_uint32(woody.last_segment_32->p_memsz, file->endian_type);
+    ((Elf32_Ehdr *)woody.base_ptr)->e_entry = get_uint32(new_entry_32, file->endian_type);
     
 
     //mettre a jour la taille du dernier segment
     //augement la taille du segment pour inclure le code a injecter, sur le disque et en memoire
-    woody.last_segment_32->p_filesz += get_uint32((uint32_t)payload->payload_size, file->endian_type);
-    woody.last_segment_32->p_memsz += get_uint32((uint32_t)payload->payload_size, file->endian_type);
+    uint32_t new_filesz_32 = get_uint32(woody.last_segment_32->p_filesz, file->endian_type) + payload->payload_size;
+    uint32_t new_memsz_32 = get_uint32(woody.last_segment_32->p_memsz, file->endian_type) + payload->payload_size;
+    woody.last_segment_32->p_filesz = get_uint32(new_filesz_32, file->endian_type);
+    woody.last_segment_32->p_memsz = get_uint32(new_memsz_32, file->endian_type);
 
     //mettre le segment executable
     //p_flags = les permissions du segment PF_R = lecture PF_W = ecriture PF_X = execution
@@ -467,7 +515,7 @@ static void j_te_met_64(t_elf_file *file, t_injection_payload *payload)
     }
 
     //calcul la taille qui faut pour le new binaire
-    besoin_taille = (size_t)get_uint64(woody.last_segment->p_offset, file->endian_type) + (size_t)get_uint64(woody.last_segment->p_filesz, file->endian_type) + payload->payload_size + ((size_t)get_uint64(woody.last_segment->p_memsz, file->endian_type) - (size_t)get_uint64(woody.data_segment->p_filesz, file->endian_type));
+    besoin_taille = (size_t)get_uint64(woody.last_segment->p_offset, file->endian_type) + (size_t)get_uint64(woody.last_segment->p_filesz, file->endian_type) + payload->payload_size + ((size_t)get_uint64(woody.data_segment->p_memsz, file->endian_type) - (size_t)get_uint64(woody.data_segment->p_filesz, file->endian_type));
     woody.total_size = besoin_taille;
 
     //alloue le new buffer
@@ -488,11 +536,14 @@ static void j_te_met_64(t_elf_file *file, t_injection_payload *payload)
     ft_memcpy(woody.base_ptr + j_te_la_met, payload->payload_code, payload->payload_size);
 
     //modifie le point d entree du programme
-    ((Elf64_Ehdr *)woody.base_ptr)->e_entry = get_uint64(woody.last_segment->p_vaddr, file->endian_type) + get_uint64(woody.last_segment->p_memsz, file->endian_type);
+    uint64_t new_entry = get_uint64(woody.last_segment->p_vaddr, file->endian_type) + get_uint64(woody.last_segment->p_memsz, file->endian_type);
+    ((Elf64_Ehdr *)woody.base_ptr)->e_entry = get_uint64(new_entry, file->endian_type);
     
     //mettre a jour la taille du dernier segment
-    woody.last_segment->p_filesz += get_uint64((uint64_t)payload->payload_size, file->endian_type);
-    woody.last_segment->p_memsz += get_uint64((uint64_t)payload->payload_size, file->endian_type);
+    uint64_t new_filesz = get_uint64(woody.last_segment->p_filesz, file->endian_type) + payload->payload_size;
+    uint64_t new_memsz = get_uint64(woody.last_segment->p_memsz, file->endian_type) + payload->payload_size;
+    woody.last_segment->p_filesz = get_uint64(new_filesz, file->endian_type);
+    woody.last_segment->p_memsz = get_uint64(new_memsz, file->endian_type);
 
     //mettre le segment executable
     woody.last_segment->p_flags |= PF_X;
@@ -519,5 +570,5 @@ void encryptitation_code(t_elf_file *file)
     if (file->arch_type == ELFCLASS32)
         encryptitation_code_32(file);
     else if (file->arch_type == ELFCLASS64)
-        encryptitation_code_32(file);
+        encryptitation_code_64(file);
 }
