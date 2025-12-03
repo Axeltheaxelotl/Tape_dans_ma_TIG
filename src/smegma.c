@@ -134,8 +134,8 @@ Elf64_Phdr *seg_get64(t_elf_file *file, int (*filetest)(Elf64_Phdr *))
 
     //recup le elf header
     eh = (Elf64_Ehdr *)file->base_addr;
-    nb = eh->e_phnum;
-    phoffset = eh->e_phoff;
+    nb = get_uint16(eh->e_phnum, file->endian_type);
+    phoffset = get_uint64(eh->e_phoff, file->endian_type);
 
     //verifie que la table des phdrs est entierment dans le mapping
     if (!ph_in_buf(file->base_addr, file->end_addr, phoffset, nb, sizeof(Elf64_Phdr)))
@@ -179,8 +179,8 @@ Elf64_Phdr *seg_last64(t_elf_file *file)
         return NULL;
 
     eh = (Elf64_Ehdr *)file->base_addr;
-    nb = eh->e_phnum;
-    phoff = eh->e_phoff;
+    nb = get_uint16(eh->e_phnum, file->endian_type);
+    phoff = get_uint64(eh->e_phoff, file->endian_type);
 
     if (!ph_in_buf(file->base_addr, file->end_addr, phoff, nb, sizeof(Elf64_Phdr)))
         return NULL;
@@ -224,8 +224,8 @@ Elf32_Phdr *seg_get32(t_elf_file *file, int (*filt)(Elf32_Phdr *))
         return NULL;
 
     eh = (Elf32_Ehdr *)file->base_addr;
-    nb = eh->e_phnum;
-    phoff = eh->e_phoff;
+    nb = get_uint16(eh->e_phnum, file->endian_type);
+    phoff = get_uint32(eh->e_phoff, file->endian_type);
 
     if (!ph_in_buf(file->base_addr, file->end_addr, phoff, nb, sizeof(Elf32_Phdr)))
         return NULL;
