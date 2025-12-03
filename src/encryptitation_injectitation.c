@@ -223,13 +223,20 @@ static void format_playload_32_bites(t_elf_file *file, t_injection_payload *play
     
     /*
         calcul du saut relatif pour revenir a la putain d entree original:
-        rel = old_entry - (adresse_du_playload + offset_du_jmp + taille de l'instruction jmp)    
+        offset_jump pointe vers l'immédiat du jmp (après l'opcode 0xe9)
+        La prochaine instruction est à offset_jump + 4 (taille de l'immédiat)
+        rel = old_entry - (adresse_du_playload + offset_du_jmp + 4)    
     */
-    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + playload->offset_jump + 5);
+    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + playload->offset_jump + 4);
 
     /*
         calcul de l offset relatif vers le debut de la section .text :
-        rel = (payload_vaddr + offset_i_text - 2) - vaddr_text
+        En 32-bit, après call/pop, edx = entry_addr + 0x29 (position du pop)
+        On ajoute ensuite un offset avec add edx, imm32
+        On veut: (entry_addr + 0x29) + offset = text_vaddr
+        Donc: offset = text_vaddr - (entry_addr + 0x29)
+        Mais si le code utilise une soustraction au lieu d'une addition...
+        Vérifions avec le code d'alagroy: entry_addr + i_text - 2 - text_vaddr
     */
     text_offset = (int32_t)((int32_t)entry_addr + playload->offset_text - 2 - get_uint32(((Elf32_Phdr *)file->section_sex)->p_vaddr, file->endian_type));
 
@@ -268,15 +275,20 @@ static void format_payload_64_bites(t_elf_file *file, t_injection_payload *paylo
 
     /*
         calcul du saut relatif pour revenir à l'entrée originale:
-        rel = old_entry - (adresse_du_payload + offset_du_jmp + taille de l'instruction jmp)
+        offset_jump pointe vers l'immédiat du jmp (après l'opcode 0xe9)
+        La prochaine instruction est à offset_jump + 4 (taille de l'immédiat)
+        rel = old_entry - (adresse_du_payload + offset_du_jmp + 4)
     */
-    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + payload->offset_jump + 5);
+    jmp_back_offset = (int32_t)(entre_originale) - ((int32_t)entry_addr + payload->offset_jump + 4);
 
     /*
         calcul de l'offset relatif vers le début de la section .text :
-        rel = (payload_vaddr + offset_i_text - 2) - vaddr_text
+        En 64-bit, on utilise lea [rel routine], qui est RIP-relative
+        Après lecture de l'instruction lea (7 bytes), rip = entry_addr + offset_text + 4
+        On veut: (entry_addr + offset_text + 4) + rel_offset = text_vaddr
+        Donc: rel_offset = text_vaddr - (entry_addr + offset_text + 4)
     */
-    text_offset = (int32_t)((int64_t)entry_addr + payload->offset_text - 2 - get_uint64(((Elf64_Phdr *)file->section_sex)->p_vaddr, file->endian_type));
+    text_offset = (int32_t)(get_uint64(((Elf64_Phdr *)file->section_sex)->p_vaddr, file->endian_type) - ((int64_t)entry_addr + payload->offset_text + 4));
 
     // taille réelle du segment .text
     text_filesize = get_uint64(((Elf64_Phdr *)file->section_sex)->p_filesz, file->endian_type);
