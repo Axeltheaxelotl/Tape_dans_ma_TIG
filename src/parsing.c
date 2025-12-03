@@ -1,9 +1,52 @@
 #include "woody.h"
 
+static int validate_elf_32(t_elf_file *file)
+{
+    Elf32_Ehdr *header32;
+
+    header32 = (Elf32_Ehdr *)file->base_addr;
+    
+    if (!(get_uint16(header32->e_machine, file->endian_type) == EM_386))
+        return (EXIT_FAILURE);
+
+    if (get_uint32(header32->e_version, file->endian_type) == EV_NONE)
+        return (EXIT_FAILURE);
+
+    if (get_uint16(header32->e_phnum, file->endian_type) == 0)
+        return (EXIT_FAILURE);
+
+    if (get_uint16(header32->e_type, file->endian_type) != ET_EXEC && 
+        get_uint16(header32->e_type, file->endian_type) != ET_DYN)
+        return (EXIT_FAILURE);
+
+    return (EXIT_SUCCESS);
+}
+
+static int validate_elf_64(t_elf_file *file)
+{
+    Elf64_Ehdr *header64;
+
+    header64 = (Elf64_Ehdr *)file->base_addr;
+
+    if (!(get_uint16(header64->e_machine, file->endian_type) == EM_X86_64))
+        return (EXIT_FAILURE);
+
+    if (get_uint32(header64->e_version, file->endian_type) == EV_NONE)
+        return (EXIT_FAILURE);
+
+    if (get_uint16(header64->e_phnum, file->endian_type) == 0)
+        return (EXIT_FAILURE);
+
+    if (get_uint16(header64->e_type, file->endian_type) != ET_EXEC && 
+        get_uint16(header64->e_type, file->endian_type) != ET_DYN)
+        return (EXIT_FAILURE);
+
+    return (EXIT_SUCCESS);
+}
+
 int le_paaarsing(const char *filename, t_elf_file *file)
 {
     unsigned char   *ident;
-    Elf64_Ehdr      *header;
     char            magic[4] = {ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3};
 
     errno = 0;
@@ -22,7 +65,6 @@ int le_paaarsing(const char *filename, t_elf_file *file)
     file->end_addr = (void *)((char *)file->base_addr + file->file_size);
 
     ident = (unsigned char *)file->base_addr;
-    header = (Elf64_Ehdr *)file->base_addr;
 
     file->arch_type = ident[EI_CLASS];
     file->endian_type = ident[EI_DATA];
@@ -35,18 +77,10 @@ int le_paaarsing(const char *filename, t_elf_file *file)
     if (ident[EI_CLASS] == ELFCLASSNONE || ident[EI_DATA] == ELFDATANONE || ident[EI_VERSION] == EV_NONE)
         return (EXIT_FAILURE);
 
-    if (!(get_uint16(header->e_machine, file->endian_type) == EM_386 ||
-          get_uint16(header->e_machine, file->endian_type) == EM_X86_64))
-        return (EXIT_FAILURE);
-
-    if (get_uint32(header->e_version, file->endian_type) == EV_NONE)
-        return (EXIT_FAILURE);
-
-    if (get_uint16(header->e_phnum, file->endian_type) == 0)
-        return (EXIT_FAILURE);
-
-    if (header->e_type != ET_EXEC && header->e_type != ET_DYN)
-        return (EXIT_FAILURE);
-
-    return (EXIT_SUCCESS);
+    if (ident[EI_CLASS] == ELFCLASS32)
+        return (validate_elf_32(file));
+    else if (ident[EI_CLASS] == ELFCLASS64)
+        return (validate_elf_64(file));
+    
+    return (EXIT_FAILURE);
 }

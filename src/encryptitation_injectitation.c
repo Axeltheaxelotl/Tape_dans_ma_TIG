@@ -213,7 +213,6 @@ static void format_playload_32_bites(t_elf_file *file, t_injection_payload *play
     int32_t text_offset;
     uint32_t text_filesize;
     uint32_t taille_cle;
-    (void)entry_addr;
 
 
     elf_header = (Elf32_Ehdr *)file->base_addr;
@@ -231,14 +230,12 @@ static void format_playload_32_bites(t_elf_file *file, t_injection_payload *play
 
     /*
         calcul de l offset relatif vers le debut de la section .text :
-        En 32-bit, après call/pop, edx = entry_addr + 0x29 (position du pop)
-        On ajoute ensuite un offset avec add edx, imm32
-        On veut: (entry_addr + 0x29) + offset = text_vaddr
-        Donc: offset = text_vaddr - (entry_addr + 0x29)
-        Mais si le code utilise une soustraction au lieu d'une addition...
-        Vérifions avec le code d'alagroy: entry_addr + i_text - 2 - text_vaddr
+        En 32-bit, après call/pop, edx = entry_addr + 0x2b (position après pop à 0x2b)
+        On ajoute ensuite un offset avec add edx, imm32 (offset de l'immediate = 0x2e)
+        On veut: (entry_addr + 0x2b) + offset = text_vaddr
+        Donc: offset = text_vaddr - (entry_addr + 0x2b)
     */
-    text_offset = (int32_t)((int32_t)entry_addr + playload->offset_text - 2 - get_uint32(((Elf32_Phdr *)file->section_sex)->p_vaddr, file->endian_type));
+    text_offset = (int32_t)(get_uint32(((Elf32_Phdr *)file->section_sex)->p_vaddr, file->endian_type) - (entry_addr + 0x2b));
 
 
     //taille reelle du segment .text
@@ -443,7 +440,7 @@ static void j_te_met_32(t_elf_file *file, t_injection_payload *payload)
     //trouve le segment "data" ou utiliser le dernier si absent
     //on cherche le segment qui contient les donnees (data)
     //si pas trouver on utilise le dernier segment trouver avt
-    woody.data_segment_32 = segment_32(file);
+    woody.data_segment_32 = seg_get32(file, is_data_32);
     if (!woody.data_segment_32)
     {
         woody.data_segment_32 = woody.last_segment_32;

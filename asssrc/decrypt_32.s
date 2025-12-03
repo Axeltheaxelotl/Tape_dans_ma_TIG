@@ -13,6 +13,7 @@ decrypt_32:
 	jmp woody
 end_code:
 	pop esi
+	mov ecx, esi        ; buffer address for write syscall
 	mov eax, 4          ; sys_write (32-bit)
 	mov ebx, 1          ; stdout
 	mov edx, 14         ; length

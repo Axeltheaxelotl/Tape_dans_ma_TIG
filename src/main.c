@@ -30,7 +30,12 @@ int main(int argc, char **argv)
     {
         size = CODE_SIZE_32;
         // Prépare la structure payload avec les offsets spécifiques 32 bits
-        payload = (t_injection_payload){malloc(size), size, 0x1b, 0x20, 0x2b, 0x6e, 0x52};
+        // offset_text_size: 0x1d (mov ecx, imm32) - immediate à 0x1d
+        // offset_key_size: 0x22 (mov esi, imm32) - immediate à 0x22
+        // offset_text: 0x2e (add edx, imm32) - immediate à 0x2e (instruction add à 0x2c)
+        // offset_key: 0x70 (clé de 32 bytes)
+        // offset_jump: 0x54 (jmp imm32) - immediate à 0x54
+        payload = (t_injection_payload){malloc(size), size, 0x1d, 0x22, 0x2e, 0x70, 0x54};
         // Copie le code assembleur de déchiffrement 32 bits dans le buffer
         ft_memcpy(payload.payload_code, DECRYPTION_CODE_32, size);
     }
