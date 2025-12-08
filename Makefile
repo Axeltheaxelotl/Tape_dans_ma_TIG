@@ -43,11 +43,15 @@ SRC_FILES	= main.c \
 			  error.c \
 			  encryptitation_injectitation.c \
 			  key_management.c \
-			  smegma.c
+			  smegma.c \
+			  compression/rle_compress.c \
+			  compression/rle_integration.c
 
 ASM_FILES	= encryptitation.s \
 			  decrypt_64.s \
-			  decrypt_32.s
+			  decrypt_32.s \
+			  rle_decompress_64.s \
+			  rle_decompress_32.s
 
 # Object files
 SRC			= $(addprefix $(SRC_DIR)/, $(SRC_FILES))
@@ -82,6 +86,7 @@ $(LIBFT):
 # Compile C source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	@echo "$(BLUE)Compiling $<...$(RESET)"
+	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compile assembly files
@@ -125,14 +130,35 @@ test: $(NAME)
 	@./$(NAME) /bin/ls
 	@echo "$(GREEN)✓ Test completed$(RESET)"
 
+# RLE Compression Tests
+RLE_TEST_SRC = rle_standalone.c \
+               src/compression/rle_compress.c
+
+RLE_ASM_OBJ = asssrc/rle_decompress_64.s
+
+test-rle: $(RLE_TEST_SRC) $(RLE_ASM_OBJ)
+	@echo "$(YELLOW)Compiling RLE test suite...$(RESET)"
+	@$(NASM) $(NASMFLAGS) asssrc/rle_decompress_64.s -o obj/rle_decompress_64.o
+	@$(CC) $(CFLAGS) $(INCLUDES) $(RLE_TEST_SRC) obj/rle_decompress_64.o -o test_rle
+	@echo "$(GREEN)✓ RLE test compiled$(RESET)"
+	@echo "$(YELLOW)Running RLE tests...$(RESET)"
+	@./test_rle
+	@echo "$(GREEN)✓ RLE tests completed$(RESET)"
+
+test-rle-clean:
+	@rm -f test_rle obj/rle_decompress_64.o
+	@echo "$(GREEN)✓ RLE test files cleaned$(RESET)"
+
 # Help
 help:
 	@echo "$(BLUE)Available targets:$(RESET)"
-	@echo "  $(GREEN)all$(RESET)     - Build $(NAME)"
-	@echo "  $(GREEN)clean$(RESET)   - Remove object files"
-	@echo "  $(GREEN)fclean$(RESET)  - Remove object files and $(NAME)"
-	@echo "  $(GREEN)re$(RESET)      - Rebuild everything"
-	@echo "  $(GREEN)test$(RESET)    - Run basic test"
-	@echo "  $(GREEN)help$(RESET)    - Show this help message"
+	@echo "  $(GREEN)all$(RESET)          - Build $(NAME)"
+	@echo "  $(GREEN)clean$(RESET)        - Remove object files"
+	@echo "  $(GREEN)fclean$(RESET)       - Remove object files and $(NAME)"
+	@echo "  $(GREEN)re$(RESET)           - Rebuild everything"
+	@echo "  $(GREEN)test$(RESET)         - Run basic test"
+	@echo "  $(GREEN)test-rle$(RESET)     - Run RLE compression tests"
+	@echo "  $(GREEN)test-rle-clean$(RESET) - Clean RLE test files"
+	@echo "  $(GREEN)help$(RESET)         - Show this help message"
 
-.PHONY: test help
+.PHONY: test help test-rle test-rle-clean
