@@ -45,7 +45,11 @@ void *try_compress_section(t_elf_file *file, void *text_data, size_t text_size)
         return NULL;
     }
 
-    // Vérifier si la compression est rentable (gain ≥ 10%)
+    // DEBUG: Afficher les tailles pour diagnostiquer
+    printf("🔍 DEBUG: original=%zu, compressed=%zu, worth_it=%d\n", 
+           text_size, compressed_size, rle_is_worth_it(text_size, compressed_size));
+
+    // Vérifier si la compression est rentable
     if (rle_is_worth_it(text_size, compressed_size))
     {
         // Compression rentable en théorie !

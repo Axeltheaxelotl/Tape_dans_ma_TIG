@@ -1,5 +1,12 @@
 #include "../../includes/woody.h"
 
+/*
+** Format RLE amélioré :
+** - [count|0x80][byte]                    : Répétition (count ≥ 2)
+** - [count][byte1][byte2]...[byteN]       : Literal run (count ≤ 127 bytes non répétés)
+**
+** Ceci évite l'explosion de taille sur des données denses.
+*/
 size_t compression(const unsigned char *input, size_t taille_input, unsigned char *output, size_t max_output)
 {
     size_t in_pos;
@@ -18,48 +25,55 @@ size_t compression(const unsigned char *input, size_t taille_input, unsigned cha
         courant = input[in_pos];
         count = 1;
 
-        //compte les repetitions max 127 pour garder les bite 7
+        // Compte les répétitions (max 127)
         while(in_pos + count < taille_input && input[in_pos + count] == courant && count < 127)
         {
             count++;
         }
-        //attention la ca decide si RLE est rentable
-        if (count >= 3 || (count >= 2 && courant >= 128))
+        
+        // Si répétition rentable (≥3 bytes identiques), encoder en RLE
+        if (count >= 3)
         {
-            //mode RLE : [count|0x8O][byte]
             if (out_pos + 2 > max_output)
                 return 0;
-            output[out_pos++] = (unsigned char)(count | 0x80);
+            output[out_pos++] = (unsigned char)(count | 0x80);  // Bit 7 = RLE mode
             output[out_pos++] = courant;
             in_pos += count;
         }
-        else{
-            //evite rle si pas rentable - traiter les bytes individuellement
-            size_t bytes_to_process = count;
-            size_t i;
+        else
+        {
+            // Pas de répétition : collecter un "literal run"
+            size_t literal_start = in_pos;
+            size_t literal_count = 0;
             
-            for (i = 0; i < bytes_to_process; i++)
+            // Collecter les bytes non répétés (max 127)
+            while (in_pos < taille_input && literal_count < 127)
             {
-                if (out_pos >= max_output)
-                    return 0;
-                
-                unsigned char current_byte = input[in_pos];
-                
-                //verifie si byte a bit 7 set
-                if (current_byte & 0x80)
+                // Vérifier si une répétition commence
+                size_t lookahead = 1;
+                while (in_pos + lookahead < taille_input && 
+                       input[in_pos + lookahead] == input[in_pos] && 
+                       lookahead < 3)
                 {
-                    //forcer rle count = 1 pour bytes >= 128
-                    if (out_pos + 2 > max_output)
-                        return 0;
-                    output[out_pos++] = 0x81;  // count=1 avec bit 7
-                    output[out_pos++] = current_byte;
+                    lookahead++;
                 }
-                else
-                {
-                    //copie literal simple
-                    output[out_pos++] = current_byte;
-                }
+                
+                // Si répétition ≥3, arrêter le literal run
+                if (lookahead >= 3)
+                    break;
+                
+                literal_count++;
                 in_pos++;
+            }
+            
+            // Encoder le literal run : [count][byte1][byte2]...[byteN]
+            if (out_pos + 1 + literal_count > max_output)
+                return 0;
+            
+            output[out_pos++] = (unsigned char)literal_count;  // Sans bit 7
+            for (size_t i = 0; i < literal_count; i++)
+            {
+                output[out_pos++] = input[literal_start + i];
             }
         }
     }
@@ -92,9 +106,10 @@ size_t decompression(const unsigned char *input, size_t taille_input, unsigned c
     while(in_pos < taille_input)
     {
         byte = input[in_pos++];
+        
         if (byte & 0x80)
         {
-            //lire count et valeur
+            // Mode RLE : répétition
             count = byte & 0x7F;
 
             if (in_pos >= taille_input)
@@ -114,11 +129,21 @@ size_t decompression(const unsigned char *input, size_t taille_input, unsigned c
                 i++;
             }
         }
-        else {
-            //copier directement 
-            if (out_pos >= max_output)
+        else
+        {
+            // Mode Literal : copier 'count' bytes
+            count = byte;
+            
+            if (in_pos + count > taille_input)
                 return 0;
-            output[out_pos++] = byte;
+            if (out_pos + count > max_output)
+                return 0;
+            
+            // Copier tous les bytes du literal run
+            for (i = 0; i < count; i++)
+            {
+                output[out_pos++] = input[in_pos++];
+            }
         }
     }
     return (out_pos);
@@ -130,6 +155,6 @@ size_t decompression(const unsigned char *input, size_t taille_input, unsigned c
 
 int rle_is_worth_it(size_t taille_original, size_t taille_compressed)
 {
-    /* Compression rentable si on gagne au moins 10% */
-    return (taille_compressed < taille_original * 90 / 100);
+   // compression rentable si taille compresser inferieur
+    return (taille_compressed < taille_original);
 }
