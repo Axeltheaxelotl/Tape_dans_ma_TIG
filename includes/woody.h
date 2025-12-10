@@ -73,6 +73,9 @@ typedef struct s_injection_payload
     uint16_t offset_text;       // offset du segment .text
     uint16_t offset_key;        // offset de la clé
     uint16_t offset_jump;       // offset du saut (jump)
+    int is_compressed;          // 1 si .text compressé, 0 sinon (NOUVEAU)
+    size_t compressed_size;     // taille compressée (NOUVEAU)
+    size_t original_size;       // taille originale avant compression (NOUVEAU)
 } t_injection_payload; //t_payload
 // Utilisé pour patcher le code de décryptage avec les bonnes adresses et tailles.
 
@@ -104,6 +107,11 @@ int32_t get_int32(int32_t bite, t_endian endian);
 uint32_t get_uint32(uint32_t bite, t_endian endian);
 uint64_t get_uint64(uint64_t bite, t_endian endian);
 //fonction pour lire correcrtement selon le type d endianess de l ELF
+
+//fonctions pour écrire en gérant l'endianess
+void set_uint16(uint16_t *ptr, uint16_t value, t_endian endian);
+void set_uint32(uint32_t *ptr, uint32_t value, t_endian endian);
+void set_uint64(uint64_t *ptr, uint64_t value, t_endian endian);
 
 
 

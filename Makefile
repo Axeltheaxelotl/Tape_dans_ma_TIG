@@ -118,7 +118,17 @@ fclean: clean
 re: fclean all
 
 # Phony targets
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re test test-rle test-rle-clean clean-tests help
+
+# ============================================================================ #
+#                                CLEANING RULES                                #
+# ============================================================================ #
+
+# Clean test binaries
+clean-tests:
+	@echo "$(RED)Cleaning test binaries...$(RESET)"
+	@rm -f test_compressible test_nops test_simple test_rle test_32bit woody
+	@echo "$(GREEN)✓ Test binaries cleaned$(RESET)"
 
 # ============================================================================ #
 #                                   BONUS                                      #
@@ -159,6 +169,7 @@ help:
 	@echo "  $(GREEN)test$(RESET)         - Run basic test"
 	@echo "  $(GREEN)test-rle$(RESET)     - Run RLE compression tests"
 	@echo "  $(GREEN)test-rle-clean$(RESET) - Clean RLE test files"
+	@echo "  $(GREEN)clean-tests$(RESET)  - Clean all test binaries (test_*, woody)"
 	@echo "  $(GREEN)help$(RESET)         - Show this help message"
 
-.PHONY: test help test-rle test-rle-clean
+.PHONY: test help test-rle test-rle-clean clean-tests

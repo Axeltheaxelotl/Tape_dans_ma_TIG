@@ -39,6 +39,43 @@ uint64_t get_uint64(uint64_t byte, t_endian endian)
 }
 
 /* ************************************************************************** */
+/*                          ENDIANNESS SET FUNCTIONS                          */
+/* ************************************************************************** */
+
+void set_uint16(uint16_t *ptr, uint16_t value, t_endian endian)
+{
+    if (endian == LENDIAN)
+        *ptr = value;
+    else
+        *ptr = (value << 8) | (value >> 8);
+}
+
+void set_uint32(uint32_t *ptr, uint32_t value, t_endian endian)
+{
+    if (endian == LENDIAN)
+        *ptr = value;
+    else
+    {
+        value = ((value << 8) & 0xFF00FF00) | ((value >> 8) & 0xFF00FF);
+        *ptr = (value << 16) | (value >> 16);
+    }
+}
+
+void set_uint64(uint64_t *ptr, uint64_t value, t_endian endian)
+{
+    if (endian == LENDIAN)
+        *ptr = value;
+    else
+    {
+        value = ((value << 8) & 0xFF00FF00FF00FF00ULL)
+            | ((value >> 8) & 0x00FF00FF00FF00FFULL);
+        value = ((value << 16) & 0xFFFF0000FFFF0000ULL)
+            | ((value >> 16) & 0x0000FFFF0000FFFFULL);
+        *ptr = (value << 32) | (value >> 32);
+    }
+}
+
+/* ************************************************************************** */
 /*                          SEGMENT VERIFICATION                              */
 /* ************************************************************************** */
 
