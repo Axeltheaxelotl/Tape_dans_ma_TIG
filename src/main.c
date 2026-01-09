@@ -84,9 +84,7 @@ int main(int argc, char **argv)
         size = CODE_SIZE;
         // Prépare la structure payload avec les offsets spécifiques 64 bits
         payload = (t_injection_payload){
-            malloc(size), size, 0x1e, 0x23, 0x2a, 0x78, 0x5c,
-            fichier.is_compressed, fichier.compressed_size, fichier.original_size
-        };
+            malloc(size), size, 0x1e, 0x23, 0x2a, 0x78, 0x5c};
         // Copie le code assembleur de déchiffrement 64 bits dans le buffer
         ft_memcpy(payload.payload_code, DECRYPTION_CODE, size);
     }
@@ -100,9 +98,7 @@ int main(int argc, char **argv)
         // offset_key: 0x70 (clé de 32 bytes)
         // offset_jump: 0x54 (jmp imm32) - immediate à 0x54
         payload = (t_injection_payload){
-            malloc(size), size, 0x1d, 0x22, 0x2e, 0x70, 0x54,
-            fichier.is_compressed, fichier.compressed_size, fichier.original_size
-        };
+            malloc(size), size, 0x1d, 0x22, 0x2e, 0x70, 0x54};
         // Copie le code assembleur de déchiffrement 32 bits dans le buffer
         ft_memcpy(payload.payload_code, DECRYPTION_CODE_32, size);
     }

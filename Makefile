@@ -1,19 +1,3 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: woody_woodpacker                          +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/12/02                          #+#    #+#                  #
-#    Updated: 2025/12/02                         ###   ########.fr            #
-#                                                                              #
-# **************************************************************************** #
-
-# ============================================================================ #
-#                                  VARIABLES                                   #
-# ============================================================================ #
-
 NAME		= woody_woodpacker
 
 # Compilateur et flags
@@ -43,15 +27,11 @@ SRC_FILES	= main.c \
 			  error.c \
 			  encryptitation_injectitation.c \
 			  key_management.c \
-			  smegma.c \
-			  compression/rle_compress.c \
-			  compression/rle_integration.c
+			  smegma.c
 
 ASM_FILES	= encryptitation.s \
 			  decrypt_64.s \
-			  decrypt_32.s \
-			  rle_decompress_64.s \
-			  rle_decompress_32.s
+			  decrypt_32.s
 
 # Object files
 SRC			= $(addprefix $(SRC_DIR)/, $(SRC_FILES))
@@ -140,25 +120,6 @@ test: $(NAME)
 	@./$(NAME) /bin/ls
 	@echo "$(GREEN)✓ Test completed$(RESET)"
 
-# RLE Compression Tests
-RLE_TEST_SRC = rle_standalone.c \
-               src/compression/rle_compress.c
-
-RLE_ASM_OBJ = asssrc/rle_decompress_64.s
-
-test-rle: $(RLE_TEST_SRC) $(RLE_ASM_OBJ)
-	@echo "$(YELLOW)Compiling RLE test suite...$(RESET)"
-	@$(NASM) $(NASMFLAGS) asssrc/rle_decompress_64.s -o obj/rle_decompress_64.o
-	@$(CC) $(CFLAGS) $(INCLUDES) $(RLE_TEST_SRC) obj/rle_decompress_64.o -o test_rle
-	@echo "$(GREEN)✓ RLE test compiled$(RESET)"
-	@echo "$(YELLOW)Running RLE tests...$(RESET)"
-	@./test_rle
-	@echo "$(GREEN)✓ RLE tests completed$(RESET)"
-
-test-rle-clean:
-	@rm -f test_rle obj/rle_decompress_64.o
-	@echo "$(GREEN)✓ RLE test files cleaned$(RESET)"
-
 # Help
 help:
 	@echo "$(BLUE)Available targets:$(RESET)"
@@ -167,9 +128,7 @@ help:
 	@echo "  $(GREEN)fclean$(RESET)       - Remove object files and $(NAME)"
 	@echo "  $(GREEN)re$(RESET)           - Rebuild everything"
 	@echo "  $(GREEN)test$(RESET)         - Run basic test"
-	@echo "  $(GREEN)test-rle$(RESET)     - Run RLE compression tests"
-	@echo "  $(GREEN)test-rle-clean$(RESET) - Clean RLE test files"
 	@echo "  $(GREEN)clean-tests$(RESET)  - Clean all test binaries (test_*, woody)"
 	@echo "  $(GREEN)help$(RESET)         - Show this help message"
 
-.PHONY: test help test-rle test-rle-clean clean-tests
+.PHONY: test help clean-tests

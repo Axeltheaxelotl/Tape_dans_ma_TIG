@@ -9,7 +9,6 @@
 #include <sys/syscall.h>
 #include <stdio.h>
 #include <elf.h>
-#include "compression.h"
 
 //types personnaluses
 typedef uint16_t t_arch;
@@ -56,9 +55,6 @@ typedef struct s_elf_file
     t_endian endian_type; // little ou big (endianness)
     int file_fd;          // descripteur de fichier (file descriptor)
     int is_key_provided;  // 1 si clé fournie par l'utilisateur, 0 si aléatoire
-    int is_compressed;    // 1 si .text est compressé, 0 sinon
-    size_t compressed_size; // taille compressée si is_compressed == 1
-    size_t original_size;   // taille originale avant compression
 } t_elf_file; //t file
 // Cette structure représente un ELF ouvert et mappé en mémoire, avec infos d'archi et clé de chiffrement.
 
@@ -73,9 +69,6 @@ typedef struct s_injection_payload
     uint16_t offset_text;       // offset du segment .text
     uint16_t offset_key;        // offset de la clé
     uint16_t offset_jump;       // offset du saut (jump)
-    int is_compressed;          // 1 si .text compressé, 0 sinon (NOUVEAU)
-    size_t compressed_size;     // taille compressée (NOUVEAU)
-    size_t original_size;       // taille originale avant compression (NOUVEAU)
 } t_injection_payload; //t_payload
 // Utilisé pour patcher le code de décryptage avec les bonnes adresses et tailles.
 
@@ -97,7 +90,6 @@ extern void encryptitation(void *data, uint32_t data_len, void *text, uint32_t l
 void encryptitation_code(t_elf_file *file);
 int parse_key_from_string(const char *key_str, char *key_buffer);
 void cle_aleatoire(t_elf_file *file);
-void *try_compress_section(t_elf_file *file, void *text_data, size_t text_size);
 
 
                          

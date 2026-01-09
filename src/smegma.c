@@ -246,7 +246,7 @@ Elf64_Phdr *seg_last64(t_elf_file *file)
     return result;
 }
 
-/* ---------- Versions 32 bits séparées, mêmes étapes ---------- */
+////////////////// Versions 32 bits séparées, mêmes étapes
 
 Elf32_Phdr *seg_get32(t_elf_file *file, int (*filt)(Elf32_Phdr *))
 {

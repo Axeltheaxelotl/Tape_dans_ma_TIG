@@ -65,9 +65,6 @@ static void encryptitation_code_64(t_elf_file *file)
     uint64_t taille_text;
     uint32_t taille_cle;
     Elf64_Phdr *phdr;
-    void *compressed_data;
-    void *data_to_encrypt;
-    size_t size_to_encrypt;
 
     //trouver le segment .text dans la table des program headers
     file->section_sex = segment(file, is_text);
@@ -102,39 +99,8 @@ static void encryptitation_code_64(t_elf_file *file)
         return ;
     }
 
-    // ========== TENTATIVE DE COMPRESSION RLE ==========
-    ft_printf("📦 Analyse de .text pour compression...\n");
-    compressed_data = try_compress_section(file, text, taille_text);
-    
-    if (compressed_data != NULL)
-    {
-        // Compression réussie et rentable
-        data_to_encrypt = compressed_data;
-        size_to_encrypt = file->compressed_size;
-    }
-    else
-    {
-        // Compression non rentable ou échec
-        data_to_encrypt = text;
-        size_to_encrypt = taille_text;
-        file->is_compressed = 0;
-    }
-
-    //chiffrer la zone contenant le code (compressé ou non)
-    encryptitation(cle, taille_cle, data_to_encrypt, size_to_encrypt);
-    
-    // Si compression, copier les données chiffrées+compressées dans .text
-    if (file->is_compressed == 1 && compressed_data != NULL)
-    {
-        ft_memcpy(text, data_to_encrypt, size_to_encrypt);
-        free(compressed_data);
-        
-        // IMPORTANT: Mettre à jour les tailles du segment
-        // p_filesz = taille compressée (sur disque)
-        // p_memsz = taille originale (en mémoire après décompression)
-        set_uint64(&phdr->p_filesz, file->compressed_size, file->endian_type);
-        // Note: p_memsz garde la taille originale pour l'allocation mémoire
-    }
+    //chiffrer la zone contenant le code
+    encryptitation(cle, taille_cle, text, taille_text);
 }
 
 

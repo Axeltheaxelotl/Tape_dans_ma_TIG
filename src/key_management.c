@@ -11,23 +11,7 @@
 
 #include "woody.h"
 
-/* ========================================================================== */
-/*                        FONCTIONS UTILITAIRES PRIVÉES                       */
-/* ========================================================================== */
 
-/*
-** Calcule la longueur d'une chaîne de caractères
-** 
-** Paramètres:
-**   str : Chaîne de caractères à mesurer
-**
-** Retourne:
-**   Le nombre de caractères avant le caractère nul '\0'
-**
-** Note:
-**   Cette fonction est définie localement pour éviter les dépendances
-**   sur différentes versions de libft qui pourraient avoir ou non ft_strlen
-*/
 static size_t key_strlen(const char *str)
 {
     size_t len;
@@ -77,51 +61,6 @@ static int hex_char_to_value(char c)
     return (-1);
 }
 
-/* ========================================================================== */
-/*                        FONCTIONS PUBLIQUES                                 */
-/* ========================================================================== */
-
-/*
-** Parse une chaîne hexadécimale et la convertit en tableau de bytes
-** 
-** Format attendu:
-**   - Exactement 64 caractères hexadécimaux (0-9, A-F, a-f)
-**   - Pas d'espaces, pas de préfixe "0x"
-**   - Exemple: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
-**
-** Algorithme:
-**   Pour chaque byte (i de 0 à 31):
-**     1. Lire 2 caractères hex consécutifs (position i*2 et i*2+1)
-**     2. Convertir le 1er caractère en nibble de poids fort (4 bits supérieurs)
-**     3. Convertir le 2e caractère en nibble de poids faible (4 bits inférieurs)
-**     4. Combiner les deux nibbles: byte = (high << 4) | low
-**
-** Exemple de conversion:
-**   Chaîne: "AB12..."
-**   Position 0-1 ("AB"):
-**     - 'A' -> 10 (0x0A)
-**     - 'B' -> 11 (0x0B)
-**     - Résultat: (0x0A << 4) | 0x0B = 0xA0 | 0x0B = 0xAB
-**   Position 2-3 ("12"):
-**     - '1' -> 1 (0x01)
-**     - '2' -> 2 (0x02)
-**     - Résultat: (0x01 << 4) | 0x02 = 0x10 | 0x02 = 0x12
-**
-** Paramètres:
-**   key_str    : Chaîne hexadécimale à parser (entrée)
-**   key_buffer : Buffer de sortie pour stocker les 32 bytes (sortie)
-**
-** Retourne:
-**   EXIT_SUCCESS (0) si la conversion réussit
-**   EXIT_FAILURE (1) si:
-**     - La longueur n'est pas exactement 64 caractères
-**     - Un caractère n'est pas hexadécimal
-**
-** Note:
-**   Cette fonction ne vérifie PAS que key_buffer a 32 bytes alloués.
-**   L'appelant doit garantir que key_buffer pointe vers un buffer
-**   de taille KEY_SIZE (32 bytes).
-*/
 int parse_key_from_string(const char *key_str, char *key_buffer)
 {
     int i;
@@ -165,35 +104,7 @@ int parse_key_from_string(const char *key_str, char *key_buffer)
     return (EXIT_SUCCESS);
 }
 
-/*
-** Génère une clé de chiffrement aléatoire cryptographiquement sûre
-** 
-** Source d'entropie: /dev/random
-**   - Fournit des données aléatoires de haute qualité
-**   - Basé sur le bruit environnemental du système (interruptions, etc.)
-**   - Bloque si l'entropie disponible est insuffisante
-**   - Plus sûr que /dev/urandom pour les clés cryptographiques
-**
-** Algorithme:
-**   1. Ouvrir /dev/random en lecture seule
-**   2. Lire exactement KEY_SIZE (32) bytes aléatoires
-**   3. Fermer le descripteur de fichier
-**   4. Stocker les bytes dans file->taille_key
-**
-** Paramètres:
-**   file : Structure contenant le buffer de clé (file->taille_key)
-**
-** Gestion d'erreurs:
-**   - Échec de open()  : Appelle error_w() et retourne
-**   - Échec de read()  : Appelle error_w() et retourne
-**   - Échec de close() : Appelle error_w() et retourne
-**   - Lecture incomplète (< KEY_SIZE bytes) : Appelle error_w()
-**
-** Note:
-**   Cette fonction peut bloquer temporairement si le système
-**   n'a pas assez d'entropie disponible. C'est normal et acceptable
-**   pour la génération de clés cryptographiques.
-*/
+
 static void generate_random_key(t_elf_file *file)
 {
     int fd;
