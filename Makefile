@@ -9,17 +9,19 @@ NASMFLAGS	= -f elf64
 # Directories
 SRC_DIR		= src
 ASM_DIR		= asssrc
+PE_DIR		= pe
 INC_DIR		= includes
 LIBFT_DIR	= libft
 OBJ_DIR		= obj
 OBJ_ASM_DIR	= $(OBJ_DIR)/asm
+OBJ_PE_DIR	= $(OBJ_DIR)/pe
 
 # Libft
 LIBFT		= $(LIBFT_DIR)/libft.a
 LIBFT_INC	= $(LIBFT_DIR)
 
 # Include paths
-INCLUDES	= -I$(INC_DIR) -I$(LIBFT_INC)
+INCLUDES	= -I$(INC_DIR) -I$(LIBFT_INC) -I$(PE_DIR)
 
 # Source files
 SRC_FILES	= main.c \
@@ -29,6 +31,10 @@ SRC_FILES	= main.c \
 			  key_management.c \
 			  smegma.c
 
+PE_FILES	= pe_parser.c \
+			  pe_encryptitation.c \
+			  pe_injectitation.c
+
 ASM_FILES	= encryptitation.s \
 			  decrypt_64.s \
 			  decrypt_32.s
@@ -36,6 +42,8 @@ ASM_FILES	= encryptitation.s \
 # Object files
 SRC			= $(addprefix $(SRC_DIR)/, $(SRC_FILES))
 OBJ			= $(addprefix $(OBJ_DIR)/, $(SRC_FILES:.c=.o))
+PE_SRC		= $(addprefix $(PE_DIR)/, $(PE_FILES))
+PE_OBJ		= $(addprefix $(OBJ_PE_DIR)/, $(PE_FILES:.c=.o))
 ASM_SRC		= $(addprefix $(ASM_DIR)/, $(ASM_FILES))
 ASM_OBJ		= $(addprefix $(OBJ_ASM_DIR)/, $(ASM_FILES:.s=.o))
 
@@ -56,6 +64,7 @@ all: $(NAME)
 $(OBJ_DIR):
 	@mkdir -p $(OBJ_DIR)
 	@mkdir -p $(OBJ_ASM_DIR)
+	@mkdir -p $(OBJ_PE_DIR)
 
 # Compile libft
 $(LIBFT):
@@ -69,15 +78,20 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
+# Compile PE source files
+$(OBJ_PE_DIR)/%.o: $(PE_DIR)/%.c | $(OBJ_DIR)
+	@echo "$(BLUE)Compiling $<...$(RESET)"
+	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
 # Compile assembly files
 $(OBJ_ASM_DIR)/%.o: $(ASM_DIR)/%.s | $(OBJ_DIR)
 	@echo "$(BLUE)Assembling $<...$(RESET)"
 	@$(NASM) $(NASMFLAGS) $< -o $@
 
 # Link everything
-$(NAME): $(LIBFT) $(OBJ) $(ASM_OBJ)
+$(NAME): $(LIBFT) $(OBJ) $(PE_OBJ) $(ASM_OBJ)
 	@echo "$(YELLOW)Linking $(NAME)...$(RESET)"
-	@$(CC) $(CFLAGS) $(OBJ) $(ASM_OBJ) -L$(LIBFT_DIR) -lft -o $(NAME)
+	@$(CC) $(CFLAGS) $(OBJ) $(PE_OBJ) $(ASM_OBJ) -L$(LIBFT_DIR) -lft -o $(NAME)
 	@echo "$(GREEN)✓ $(NAME) successfully compiled!$(RESET)"
 
 # Clean object files
