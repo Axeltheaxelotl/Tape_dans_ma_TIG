@@ -9,6 +9,11 @@
 #include <sys/syscall.h>
 #include <stdio.h>
 #include <elf.h>
+#include <stdarg.h>
+#include <string.h>
+
+//global pour le verbose
+extern int verbose;
 
 //types personnaluses
 typedef uint16_t t_arch;
@@ -104,6 +109,10 @@ uint64_t get_uint64(uint64_t bite, t_endian endian);
 void set_uint16(uint16_t *ptr, uint16_t value, t_endian endian);
 void set_uint32(uint32_t *ptr, uint32_t value, t_endian endian);
 void set_uint64(uint64_t *ptr, uint64_t value, t_endian endian);
+
+
+//verbose
+void verbose_printf(const char *format, ...);
 
 
 

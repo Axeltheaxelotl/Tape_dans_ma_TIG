@@ -17,13 +17,16 @@ static void encryptitation_code_32(t_elf_file *file)
     uint32_t taille_cle;
     Elf32_Phdr *phdr;
 
+    verbose_printf("Location .text segment (32bits)...\n");
     //trouver le segment .text dans la table des program headers
     file->section_sex = segment_32(file);
     if(file->section_sex == NULL)
     {
+        verbose_printf("Error: .text segment not found\n");
         error_w(file, NULL, NULL, ERROR_PH_TRUNC);
         return ;
     }
+    verbose_printf(".text segement found\n");
 
 
     //ajouter le flag d ecriture (PF_W) au segment
@@ -32,14 +35,15 @@ static void encryptitation_code_32(t_elf_file *file)
     // Cela ne modifie pas le fichier sur disque tant qu’on ne l’écrit pas, mais en mémoire ça change comment le loader pourrait mapper ce segment.
     phdr = (Elf32_Phdr *)file->section_sex;
     phdr->p_flags |= PF_W;
-
+    verbose_printf("Added write permission to .text segement\n");
     //calculer le pointeur vers le code chiffrer
     uint32_t offset = get_uint32(phdr->p_offset, file->endian_type);
     text = file->base_addr + offset;
 
     //recup la taille du code a chiffrer
     taille_text = get_uint32(phdr->p_filesz, file->endian_type);
-
+    verbose_printf(".text section offset : 0x%x\n", offset);
+    verbose_printf(".text section size: %u bytes\n", taille_text);
     //generer une putain de cle aleatoire
     cle_aleatoire(file);
 
@@ -50,14 +54,18 @@ static void encryptitation_code_32(t_elf_file *file)
     //verifier que la zone texte est dans la limites du fichier
     if (text < file->base_addr || text > file->end_addr || (text + taille_text) > file->end_addr)
     {
+        verbose_printf("Error: .text section out ou bounds\n");
         error_w(file, NULL, NULL, ERROR_TEXT_TRUNC);
         return ;
     }
+    verbose_printf(".text section encrypted successfully\n");
 
     //chiffrer la zone contenant le code
     encryptitation(cle, taille_cle, text, taille_text); //assembler de met couille on verra bieng
 }
 
+
+//pour le 64 bites mtn
 static void encryptitation_code_64(t_elf_file *file)
 {
     void *text;
@@ -65,19 +73,21 @@ static void encryptitation_code_64(t_elf_file *file)
     uint64_t taille_text;
     uint32_t taille_cle;
     Elf64_Phdr *phdr;
-
+    verbose_printf("Location .text segment (64bit)...\n");
     //trouver le segment .text dans la table des program headers
     file->section_sex = segment(file, is_text);
     if(file->section_sex == NULL)
     {
+        verbose_printf(".text sgement not found\n");
         error_w(file, NULL, NULL, ERROR_PH_TRUNC);
         return ;
     }
+    verbose_printf(".text sgement found\n");
 
     //ajouter le flag d ecriture (PF_W) au segment
     phdr = (Elf64_Phdr *)file->section_sex;
     phdr->p_flags |= PF_W;
-
+    verbose_printf(".text segment found\n");
     //calculer le pointeur vers le code chiffrer
     uint64_t offset = get_uint64(phdr->p_offset, file->endian_type);
     text = file->base_addr + offset;
@@ -85,6 +95,8 @@ static void encryptitation_code_64(t_elf_file *file)
     //recup la taille du code a chiffrer
     taille_text = get_uint64(phdr->p_filesz, file->endian_type);
 
+    verbose_printf(".text section offset: 0x%lx\n", offset);
+    verbose_printf(".text section size: %lu bytes\n", taille_text);
     //generer une putain de cle aleatoire
     cle_aleatoire(file);
 
@@ -95,12 +107,14 @@ static void encryptitation_code_64(t_elf_file *file)
     //verifier que la zone texte est dans la limites du fichier
     if (text < file->base_addr || text > file->end_addr || (text + taille_text) > file->end_addr)
     {
+        verbose_printf("Error: .text section out of bounds\n");
         error_w(file, NULL, NULL, ERROR_TEXT_TRUNC);
         return ;
     }
-
+    verbose_printf("Encrypting: .text section (%lu bytes)...\n", taille_text);
     //chiffrer la zone contenant le code
     encryptitation(cle, taille_cle, text, taille_text);
+    verbose_printf(".text section encrypted sucessfully\n");
 }
 
 

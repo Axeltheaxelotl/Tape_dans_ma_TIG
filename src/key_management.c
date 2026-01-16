@@ -109,17 +109,18 @@ static void generate_random_key(t_elf_file *file)
 {
     int fd;
     ssize_t nread;
-
+    verbose_printf("generating random encrytpion key...\n");
     // Étape 1: Ouvrir /dev/random
     // O_RDONLY = ouverture en lecture seule
     fd = open("/dev/random", O_RDONLY);
     if (fd == -1)
     {
+        verbose_printf("Error: Cannot open /dev/random: %s\n", strerror(errno));
         // Échec d'ouverture: errno est automatiquement défini par open()
         error_w(file, NULL, NULL, ERROR_ERRNO);
         return ;
     }
-
+    verbose_printf("Reading %d bytes from /dev/random...\n");
     // Étape 2: Lire KEY_SIZE (32) bytes aléatoires
     // read() retourne le nombre de bytes effectivement lus
     nread = read(fd, file->taille_key, KEY_SIZE);
@@ -127,6 +128,7 @@ static void generate_random_key(t_elf_file *file)
     // Vérifier les erreurs de lecture
     if (nread < 0)
     {
+        verbose_printf("Error: Failed to read from /dev/random: %s\n", strerror(errno));
         // Erreur système (errno défini par read())
         close(fd);
         error_w(file, NULL, NULL, ERROR_ERRNO);
@@ -136,15 +138,19 @@ static void generate_random_key(t_elf_file *file)
     // Vérifier que tous les bytes ont été lus
     if (nread != KEY_SIZE)
     {
+        verbose_printf("Error: Incomplete read from /dev/random (%zd/%d bytes)\n", nread, KEY_SIZE);
         // Lecture incomplète (ne devrait jamais arriver avec /dev/random)
         close(fd);
         error_w(file, NULL, NULL, ERROR_ERRNO);
         return ;
     }
+    verbose_printf("Successfully generated %d-byte radom key\n", KEY_SIZE);
+
 
     // Étape 3: Fermer le descripteur de fichier
     if (close(fd) == -1)
     {
+        verbose_printf("Error:Failed to close /dev/random: %s\n", strerror(errno));
         // Échec de fermeture (rare mais possible)
         error_w(file, NULL, NULL, ERROR_ERRNO);
         return ;
@@ -271,6 +277,7 @@ void cle_aleatoire(t_elf_file *file)
     // Si aucune clé n'a été fournie par l'utilisateur
     if (file->is_key_provided == 0)
     {
+        verbose_printf("No key provided, generating random key\n");
         // Générer une nouvelle clé aléatoire via /dev/random
         // Cette fonction peut bloquer si l'entropie est insuffisante
         generate_random_key(file);
