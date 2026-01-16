@@ -285,7 +285,10 @@ void cle_aleatoire(t_elf_file *file)
         // Note: En cas d'erreur, generate_random_key() appelle error_w()
         // qui termine le programme, donc on ne revient ici qu'en cas de succès
     }
-    
+    else
+    {
+        verbose_printf("Using user-provided encryption key\n");
+    }
     // MODE 2: Clé paramétrisée
     // Si is_key_provided == 1, la clé est déjà dans file->taille_key
     // (parsée par parse_key_from_string() appelée depuis main.c)

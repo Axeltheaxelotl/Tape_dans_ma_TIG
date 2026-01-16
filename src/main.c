@@ -91,7 +91,7 @@ static int parse_arguments(int argc, char **argv, char *key_buffer, int *is_key_
     key_found = 0;
 
     //parse tout les arguments
-    while(1 < argc)
+    while(i < argc)
     {
         //verbose option
         if (ft_strcmp(argv[i], "-v") == 0 || ft_strcmp(argv[i], "--verbose") == 0)
@@ -125,7 +125,7 @@ static int parse_arguments(int argc, char **argv, char *key_buffer, int *is_key_
         if (binary_index == -1)
         {
             binary_index = i;
-            i++
+            i++;
         }
         else
         {
@@ -184,7 +184,7 @@ static int process_elf_file(const char *filename, char *key_buffer, int is_key_p
     else
     {
         size = CODE_SIZE_32;
-        verbose_printf("Using 32-bit decryption stub (size: %d bytes)\n" size);
+        verbose_printf("Using 32-bit decryption stub (size: %d bytes)\n", size);
         // Prépare la structure payload avec les offsets spécifiques 32 bits
         payload = (t_injection_payload){
             malloc(size), size, 0x1d, 0x22, 0x2e, 0x70, 0x54};
@@ -252,10 +252,12 @@ static int process_pe_file(const char *filename, char *key_buffer, int is_key_pr
             malloc(size), size, 0x1d, 0x22, 0x2e, 0x70, 0x54};
         ft_memcpy(payload.payload_code, DECRYPTION_CODE_32, size); // TODO: Utiliser PE_DECRYPTION_CODE_32
     }
-
+    verbose_printf("Injecting decryption stub into PE binary...\n");
     // Injecter le code dans le PE
     pe_inject(&pe, &payload);
-    ver
+    verbose_printf("Injection completed\n");
+    verbose_printf("Output file: woody.exe\n");
+    verbose_printf("Success! PE packing completed");
 
     // Nettoyage
     free(payload.payload_code);
@@ -274,11 +276,12 @@ int main(int argc, char **argv)
     // Initialisation
     ft_bzero(key_buffer, KEY_SIZE);
     errno = 0;
-
+    verbose_printf("Woody Woodpacker starting...\n");
     // Parse les arguments et récupère l'index du fichier binaire
     binary_index = parse_arguments(argc, argv, key_buffer, &is_key_provided);
     if (binary_index == -1)
         return (usage());
+    verbose_printf("Detecting file type for: %s\n", argv[binary_index]);
 
     // Détecter le type de fichier
     file_type = detect_file_type(argv[binary_index]);
@@ -295,6 +298,7 @@ int main(int argc, char **argv)
     }
     else
     {
+        verbose_printf("Unknown file format detected\n");
         ft_putstr_fd("Error: Unknown file format. Only ELF and PE files are supported.\n", 2);
         return (EXIT_FAILURE);
     }
