@@ -1,14 +1,5 @@
 #include "woody.h"
 
-/*
-** NOTE: Les fonctions de gestion de clé ont été déplacées vers key_management.c
-** - parse_key_from_string() : Parse une clé hexadécimale en bytes
-** - cle_aleatoire()          : Génère ou affiche la clé (aléatoire ou paramétré)
-**
-** Ce fichier se concentre maintenant uniquement sur le chiffrement et l'injection
-*/
-
-
 static void encryptitation_code_32(t_elf_file *file)
 {
     void *text;
